@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Cloning Workshop - F5 TTS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --deep-slate: #1e293b;
+            --warm-white: #fafafa;
+            --accent-teal: #0d9488;
+            --soft-gray: #64748b;
+            --success-green: #059669;
+            --warning-amber: #d97706;
+            --error-red: #dc2626;
+            --neutral-blue: #475569;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--deep-slate) 0%, #0f172a 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, var(--accent-teal), #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-teal), #06b6d4);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(13, 148, 136, 0.4);
+        }
+        
+        .upload-zone {
+            border: 2px dashed var(--accent-teal);
+            transition: all 0.3s ease;
+        }
+        
+        .upload-zone.dragover {
+            border-color: #06b6d4;
+            background: rgba(13, 148, 136, 0.1);
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, var(--accent-teal), #06b6d4);
+            height: 4px;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+        
+        .voice-clone-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .voice-clone-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .comparison-player {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .play-button {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--accent-teal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .play-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 20px rgba(13, 148, 136, 0.4);
+        }
+        
+        .quality-meter {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .quality-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--error-red), var(--warning-amber), var(--success-green));
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .training-progress {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .step-indicator {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .step-indicator.active {
+            background: var(--accent-teal);
+            color: white;
+        }
+        
+        .step-indicator.completed {
+            background: var(--success-green);
+            color: white;
+        }
+        
+        .step-indicator.pending {
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--soft-gray);
+        }
+        
+        .nav-link {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:hover {
+            color: var(--accent-teal);
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--accent-teal);
+            transition: width 0.3s ease;
+        }
+        
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 0.8s ease forwards;
+        }
+        
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .stagger-1 { animation-delay: 0.1s; }
+        .stagger-2 { animation-delay: 0.2s; }
+        .stagger-3 { animation-delay: 0.3s; }
+        .stagger-4 { animation-delay: 0.4s; }
+        
+        .batch-item {
+            display: flex;
+            align-items: center;
+            justify-content: between;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 4px solid var(--accent-teal);
+        }
+        
+        .similarity-score {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .similarity-high {
+            background: rgba(5, 150, 105, 0.2);
+            color: var(--success-green);
+        }
+        
+        .similarity-medium {
+            background: rgba(217, 119, 6, 0.2);
+            color: var(--warning-amber);
+        }
+        
+        .similarity-low {
+            background: rgba(220, 38, 38, 0.2);
+            color: var(--error-red);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-teal-500 to-cyan-400 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                    </div>
+                    <h1 class="text-xl font-bold text-white">F5 TTS</h1>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="index.html" class="nav-link text-white hover:text-teal-400">Synthesize</a>
+                    <a href="#cloning" class="nav-link text-white hover:text-teal-400">Voice Cloning</a>
+                    <a href="setup.html" class="nav-link text-white hover:text-teal-400">Setup Guide</a>
+                    <button class="btn-primary px-6 py-2 rounded-lg text-white font-medium">Get Started</button>
+                </div>
+                <button class="md:hidden text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="pt-32 pb-20 relative">
+        <div class="max-w-7xl mx-auto px-6 text-center">
+            <h1 class="text-5xl md:text-6xl font-bold text-white mb-6 fade-in">
+                Voice <span class="gradient-text">Cloning Workshop</span>
+            </h1>
+            <p class="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto fade-in stagger-1">
+                Create professional voice clones with advanced AI technology. Upload, train, and deploy custom voices for your projects.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center fade-in stagger-2">
+                <button onclick="startBatchCloning()" class="btn-primary px-8 py-4 rounded-xl text-lg font-semibold text-white">
+                    Start Batch Cloning
+                </button>
+                <button onclick="showDemo()" class="glass-card px-8 py-4 rounded-xl text-lg font-semibold text-white hover:bg-white/20 transition-all">
+                    Watch Demo
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Batch Upload Section -->
+    <section id="cloning" class="py-20 relative">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-4xl md:text-5xl font-bold text-white mb-6">
+                    Batch Voice <span class="gradient-text">Processing</span>
+                </h2>
+                <p class="text-xl text-gray-300 max-w-2xl mx-auto">
+                    Upload multiple voice samples and process them simultaneously with our advanced batch cloning system.
+                </p>
+            </div>
+
+            <div class="grid lg:grid-cols-3 gap-8">
+                <!-- Upload Panel -->
+                <div class="lg:col-span-2">
+                    <div class="glass-card rounded-2xl p-8 fade-in stagger-1">
+                        <h3 class="text-2xl font-bold text-white mb-6">Upload Voice Samples</h3>
+                        
+                        <!-- Batch Upload Zone -->
+                        <div class="upload-zone rounded-lg p-8 text-center mb-6" id="batchUploadZone">
+                            <svg class="w-16 h-16 text-teal-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                            </svg>
+                            <p class="text-white text-lg mb-2">Drop multiple voice samples here</p>
+                            <p class="text-gray-400 mb-4">or click to browse (10-15 seconds each)</p>
+                            <div class="flex justify-center space-x-4 text-sm text-gray-300">
+                                <span>• WAV, MP3, M4A</span>
+                                <span>• Max 10 files</span>
+                                <span>• 10-15s duration</span>
+                            </div>
+                            <input type="file" id="batchVoiceUpload" accept="audio/*" multiple class="hidden">
+                        </div>
+
+                        <!-- Upload Progress -->
+                        <div id="batchUploadProgress" class="hidden mb-6">
+                            <div class="flex justify-between text-sm text-gray-300 mb-2">
+                                <span>Processing files...</span>
+                                <span id="batchProgressPercent">0%</span>
+                            </div>
+                            <div class="w-full bg-white/10 rounded-full h-3">
+                                <div id="batchProgressBar" class="progress-bar h-3 rounded-full"></div>
+                            </div>
+                        </div>
+
+                        <!-- Uploaded Files -->
+                        <div id="uploadedFiles" class="space-y-3 mb-6">
+                            <!-- Sample uploaded files -->
+                            <div class="batch-item">
+                                <div class="flex items-center space-x-3 flex-1">
+                                    <div class="w-10 h-10 bg-teal-500 rounded-full flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293H15M9 10V9a3 3 0 013-3v0a3 3 0 013 3v1M9 10v5a2 2 0 002 2h2a2 2 0 002-2v-5"/>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-white font-medium">john_doe_sample.wav</p>
+                                        <p class="text-sm text-gray-400">Duration: 12.5s • Quality: High</p>
+                                    </div>
+                                    <div class="similarity-score similarity-high">
+                                        <span>95%</span>
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <button class="text-gray-400 hover:text-red-400 ml-4">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <div class="batch-item">
+                                <div class="flex items-center space-x-3 flex-1">
+                                    <div class="w-10 h-10 bg-cyan-500 rounded-full flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293H15M9 10V9a3 3 0 013-3v0a3 3 0 013 3v1M9 10v5a2 2 0 002 2h2a2 2 0 002-2v-5"/>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-white font-medium">jane_smith_narrative.wav</p>
+                                        <p class="text-sm text-gray-400">Duration: 14.2s • Quality: Medium</p>
+                                    </div>
+                                    <div class="similarity-score similarity-medium">
+                                        <span>78%</span>
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <button class="text-gray-400 hover:text-red-400 ml-4">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Training Configuration -->
+                        <div class="border-t border-white/10 pt-6">
+                            <h4 class="text-lg font-semibold text-white mb-4">Training Configuration</h4>
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">Training Steps</label>
+                                    <select class="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-teal-500 focus:outline-none">
+                                        <option value="1000">1,000 steps (Fast)</option>
+                                        <option value="2000" selected>2,000 steps (Balanced)</option>
+                                        <option value="5000">5,000 steps (High Quality)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">Learning Rate</label>
+                                    <select class="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-teal-500 focus:outline-none">
+                                        <option value="0.001">0.001 (Conservative)</option>
+                                        <option value="0.0001" selected>0.0001 (Standard)</option>
+                                        <option value="0.00001">0.00001 (Precise)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex space-x-4 mt-6">
+                            <button onclick="startTraining()" class="flex-1 btn-primary py-3 rounded-lg text-white font-medium">
+                                Start Training
+                            </button>
+                            <button onclick="clearAll()" class="px-6 py-3 border border-white/20 rounded-lg text-white font-medium hover:bg-white/10 transition-all">
+                                Clear All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Training Dashboard -->
+                <div class="space-y-6">
+                    <!-- Training Progress -->
+                    <div class="glass-card rounded-2xl p-6 fade-in stagger-2">
+                        <h3 class="text-xl font-bold text-white mb-4">Training Progress</h3>
+                        
+                        <div class="space-y-4">
+                            <div class="training-progress">
+                                <div class="step-indicator completed">1</div>
+                                <div class="flex-1">
+                                    <p class="text-white font-medium">Data Preprocessing</p>
+                                    <p class="text-sm text-gray-400">Audio normalization and feature extraction</p>
+                                </div>
+                                <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+
+                            <div class="training-progress">
+                                <div class="step-indicator active">2</div>
+                                <div class="flex-1">
+                                    <p class="text-white font-medium">Model Training</p>
+                                    <p class="text-sm text-gray-400">Neural network optimization in progress</p>
+                                </div>
+                                <div class="w-5 h-5">
+                                    <div class="w-full h-full border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+                                </div>
+                            </div>
+
+                            <div class="training-progress">
+                                <div class="step-indicator pending">3</div>
+                                <div class="flex-1">
+                                    <p class="text-gray-400 font-medium">Quality Assessment</p>
+                                    <p class="text-sm text-gray-500">Similarity analysis and validation</p>
+                                </div>
+                            </div>
+
+                            <div class="training-progress">
+                                <div class="step-indicator pending">4</div>
+                                <div class="flex-1">
+                                    <p class="text-gray-400 font-medium">Voice Deployment</p>
+                                    <p class="text-sm text-gray-500">Model packaging and integration</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 p-4 bg-white/5 rounded-lg">
+                            <div class="flex justify-between text-sm text-gray-300 mb-2">
+                                <span>Training Progress</span>
+                                <span>67%</span>
+                            </div>
+                            <div class="w-full bg-white/10 rounded-full h-2">
+                                <div class="progress-bar w-2/3 h-2 rounded-full"></div>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-2">Estimated time remaining: 4 minutes</p>
+                        </div>
+                    </div>
+
+                    <!-- Quality Metrics -->
+                    <div class="glass-card rounded-2xl p-6 fade-in stagger-3">
+                        <h3 class="text-xl font-bold text-white mb-4">Quality Metrics</h3>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-sm text-gray-300 mb-2">
+                                    <span>Audio Quality</span>
+                                    <span>92%</span>
+                                </div>
+                                <div class="quality-meter">
+                                    <div class="quality-fill" style="width: 92%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-sm text-gray-300 mb-2">
+                                    <span>Voice Similarity</span>
+                                    <span>87%</span>
+                                </div>
+                                <div class="quality-meter">
+                                    <div class="quality-fill" style="width: 87%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-sm text-gray-300 mb-2">
+                                    <span>Naturalness</span>
+                                    <span>94%</span>
+                                </div>
+                                <div class="quality-meter">
+                                    <div class="quality-fill" style="width: 94%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-sm text-gray-300 mb-2">
+                                    <span>Clarity</span>
+                                    <span>89%</span>
+                                </div>
+                                <div class="quality-meter">
+                                    <div class="quality-fill" style="width: 89%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Resources -->
+                    <div class="glass-card rounded-2xl p-6 fade-in stagger-4">
+                        <h3 class="text-xl font-bold text-white mb-4">System Resources</h3>
+                        
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-gray-300">GPU Usage</span>
+                                <span class="text-white font-medium">78%</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-300">Memory Usage</span>
+                                <span class="text-white font-medium">6.2GB / 16GB</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-300">Processing Speed</span>
+                                <span class="text-white font-medium">2.3x real-time</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-300">Temperature</span>
+                                <span class="text-white font-medium">72°C</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Voice Comparison Section -->
+    <section class="py-20 relative">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-4xl md:text-5xl font-bold text-white mb-6">
+                    Voice <span class="gradient-text">Comparison</span>
+                </h2>
+                <p class="text-xl text-gray-300 max-w-2xl mx-auto">
+                    Compare original voice samples with cloned versions to assess quality and similarity.
+                </p>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-8">
+                <!-- Original vs Cloned -->
+                <div class="glass-card rounded-2xl p-8 fade-in stagger-1">
+                    <h3 class="text-2xl font-bold text-white mb-6">Original vs Cloned</h3>
+                    
+                    <div class="space-y-4">
+                        <div class="comparison-player">
+                            <div class="play-button">
+                                <svg class="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z"/>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-white font-medium">Original Voice</p>
+                                <p class="text-sm text-gray-400">john_doe_sample.wav</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm text-gray-400">Duration</p>
+                                <p class="text-white font-medium">12.5s</p>
+                            </div>
+                        </div>
+
+                        <div class="comparison-player">
+                            <div class="play-button">
+                                <svg class="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z"/>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-white font-medium">Cloned Voice</p>
+                                <p class="text-sm text-gray-400">john_doe_cloned_v2.wav</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm text-gray-400">Similarity</p>
+                                <p class="text-green-400 font-medium">95%</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 p-4 bg-white/5 rounded-lg">
+                        <h4 class="text-white font-medium mb-3">Quality Analysis</h4>
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-300">Spectral Similarity</span>
+                                <span class="text-green-400">92%</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-300">Prosody Match</span>
+                                <span class="text-green-400">88%</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-300">Formant Structure</span>
+                                <span class="text-green-400">94%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cloned Voice Gallery -->
+                <div class="glass-card rounded-2xl p-8 fade-in stagger-2">
+                    <h3 class="text-2xl font-bold text-white mb-6">Cloned Voices</h3>
+                    
+                    <div class="space-y-4">
+                        <div class="voice-clone-card glass-card rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-12 h-12 bg-gradient-to-br from-teal-500 to-cyan-400 rounded-full flex items-center justify-center">
+                                        <span class="text-white font-bold">J</span>
+                                    </div>
+                                    <div>
+                                        <p class="text-white font-medium">John Doe Clone</p>
+                                        <p class="text-sm text-gray-400">Created 2 hours ago</p>
+                                    </div>
+                                </div>
+                                <div class="similarity-score similarity-high">
+                                    <span>95%</span>
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button onclick="testVoice('john')" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-all">
+                                    Test Voice
+                                </button>
+                                <button onclick="exportVoice('john')" class="px-4 py-2 border border-white/20 rounded-lg text-white hover:bg-white/10 transition-all">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="voice-clone-card glass-card rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-400 rounded-full flex items-center justify-center">
+                                        <span class="text-white font-bold">J</span>
+                                    </div>
+                                    <div>
+                                        <p class="text-white font-medium">Jane Smith Clone</p>
+                                        <p class="text-sm text-gray-400">Created 5 hours ago</p>
+                                    </div>
+                                </div>
+                                <div class="similarity-score similarity-medium">
+                                    <span>78%</span>
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button onclick="testVoice('jane')" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-all">
+                                    Test Voice
+                                </button>
+                                <button onclick="exportVoice('jane')" class="px-4 py-2 border border-white/20 rounded-lg text-white hover:bg-white/10 transition-all">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="voice-clone-card glass-card rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-400 rounded-full flex items-center justify-center">
+                                        <span class="text-white font-bold">M</span>
+                                    </div>
+                                    <div>
+                                        <p class="text-white font-medium">Mike Johnson Clone</p>
+                                        <p class="text-sm text-gray-400">Created 1 day ago</p>
+                                    </div>
+                                </div>
+                                <div class="similarity-score similarity-high">
+                                    <span>91%</span>
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button onclick="testVoice('mike')" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-all">
+                                    Test Voice
+                                </button>
+                                <button onclick="exportVoice('mike')" class="px-4 py-2 border border-white/20 rounded-lg text-white hover:bg-white/10 transition-all">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 pt-6 border-t border-white/10">
+                        <button onclick="exportAllVoices()" class="w-full bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white py-3 rounded-lg font-medium transition-all">
+                            Export All Voices
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Performance Analytics -->
+    <section class="py-20 relative">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-4xl md:text-5xl font-bold text-white mb-6">
+                    Performance <span class="gradient-text">Analytics</span>
+                </h2>
+                <p class="text-xl text-gray-300 max-w-2xl mx-auto">
+                    Monitor training performance, resource utilization, and quality metrics in real-time.
+                </p>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-8">
+                <!-- Training Performance Chart -->
+                <div class="glass-card rounded-2xl p-8 fade-in stagger-1">
+                    <h3 class="text-xl font-bold text-white mb-6">Training Performance</h3>
+                    <div id="performanceChart" style="height: 300px;"></div>
+                </div>
+
+                <!-- Quality Trends -->
+                <div class="glass-card rounded-2xl p-8 fade-in stagger-2">
+                    <h3 class="text-xl font-bold text-white mb-6">Quality Trends</h3>
+                    <div id="qualityChart" style="height: 300px;"></div>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="grid md:grid-cols-4 gap-6 mt-8">
+                <div class="glass-card rounded-2xl p-6 text-center fade-in stagger-1">
+                    <div class="text-3xl font-bold text-teal-400 mb-2">247</div>
+                    <p class="text-gray-300">Voices Cloned</p>
+                </div>
+                <div class="glass-card rounded-2xl p-6 text-center fade-in stagger-2">
+                    <div class="text-3xl font-bold text-cyan-400 mb-2">94%</div>
+                    <p class="text-gray-300">Avg Quality</p>
+                </div>
+                <div class="glass-card rounded-2xl p-6 text-center fade-in stagger-3">
+                    <div class="text-3xl font-bold text-blue-400 mb-2">2.3x</div>
+                    <p class="text-gray-300">Processing Speed</p>
+                </div>
+                <div class="glass-card rounded-2xl p-6 text-center fade-in stagger-4">
+                    <div class="text-3xl font-bold text-purple-400 mb-2">98%</div>
+                    <p class="text-gray-300">Success Rate</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 border-t border-white/10">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex flex-col md:flex-row items-center justify-between">
+                <div class="flex items-center space-x-3 mb-4 md:mb-0">
+                    <div class="w-8 h-8 bg-gradient-to-br from-teal-500 to-cyan-400 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                    </div>
+                    <span class="text-white font-semibold">F5 TTS</span>
+                </div>
+                <p class="text-gray-400 text-sm">
+                    © 2024 F5 TTS. Advanced voice synthesis technology for the future.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Voice Cloning Workshop JavaScript
+        class VoiceCloningWorkshop {
+            constructor() {
+                this.trainingInProgress = false;
+                this.uploadedFiles = [];
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.initializeCharts();
+                this.initializeAnimations();
+            }
+
+            setupEventListeners() {
+                // Batch upload zone
+                const batchUploadZone = document.getElementById('batchUploadZone');
+                const batchVoiceUpload = document.getElementById('batchVoiceUpload');
+                
+                batchUploadZone.addEventListener('click', () => batchVoiceUpload.click());
+                batchUploadZone.addEventListener('dragover', this.handleDragOver.bind(this));
+                batchUploadZone.addEventListener('dragleave', this.handleDragLeave.bind(this));
+                batchUploadZone.addEventListener('drop', this.handleDrop.bind(this));
+                batchVoiceUpload.addEventListener('change', this.handleFileSelect.bind(this));
+            }
+
+            initializeCharts() {
+                // Performance Chart
+                const performanceChart = echarts.init(document.getElementById('performanceChart'));
+                const performanceOption = {
+                    backgroundColor: 'transparent',
+                    textStyle: { color: '#ffffff' },
+                    tooltip: {
+                        trigger: 'axis',
+                        backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                        borderColor: 'rgba(13, 148, 136, 0.3)',
+                        textStyle: { color: '#ffffff' }
+                    },
+                    legend: {
+                        data: ['Loss', 'Accuracy', 'Processing Speed'],
+                        textStyle: { color: '#ffffff' }
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        boundaryGap: false,
+                        data: ['0', '200', '400', '600', '800', '1000', '1200', '1400'],
+                        axisLine: { lineStyle: { color: '#64748b' } },
+                        axisLabel: { color: '#94a3b8' }
+                    },
+                    yAxis: {
+                        type: 'value',
+                        axisLine: { lineStyle: { color: '#64748b' } },
+                        axisLabel: { color: '#94a3b8' },
+                        splitLine: { lineStyle: { color: '#374151' } }
+                    },
+                    series: [
+                        {
+                            name: 'Loss',
+                            type: 'line',
+                            data: [2.3, 1.8, 1.4, 1.1, 0.9, 0.7, 0.6, 0.5],
+                            lineStyle: { color: '#ef4444' },
+                            itemStyle: { color: '#ef4444' }
+                        },
+                        {
+                            name: 'Accuracy',
+                            type: 'line',
+                            data: [15, 35, 55, 70, 80, 87, 92, 95],
+                            lineStyle: { color: '#0d9488' },
+                            itemStyle: { color: '#0d9488' }
+                        },
+                        {
+                            name: 'Processing Speed',
+                            type: 'line',
+                            data: [1.2, 1.5, 1.8, 2.0, 2.2, 2.3, 2.3, 2.3],
+                            lineStyle: { color: '#06b6d4' },
+                            itemStyle: { color: '#06b6d4' }
+                        }
+                    ]
+                };
+                performanceChart.setOption(performanceOption);
+
+                // Quality Chart
+                const qualityChart = echarts.init(document.getElementById('qualityChart'));
+                const qualityOption = {
+                    backgroundColor: 'transparent',
+                    textStyle: { color: '#ffffff' },
+                    tooltip: {
+                        trigger: 'item',
+                        backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                        borderColor: 'rgba(13, 148, 136, 0.3)',
+                        textStyle: { color: '#ffffff' }
+                    },
+                    legend: {
+                        orient: 'vertical',
+                        left: 'left',
+                        textStyle: { color: '#ffffff' }
+                    },
+                    series: [
+                        {
+                            name: 'Quality Metrics',
+                            type: 'pie',
+                            radius: '50%',
+                            data: [
+                                { value: 95, name: 'Audio Quality', itemStyle: { color: '#0d9488' } },
+                                { value: 87, name: 'Voice Similarity', itemStyle: { color: '#06b6d4' } },
+                                { value: 94, name: 'Naturalness', itemStyle: { color: '#3b82f6' } },
+                                { value: 89, name: 'Clarity', itemStyle: { color: '#8b5cf6' } }
+                            ],
+                            emphasis: {
+                                itemStyle: {
+                                    shadowBlur: 10,
+                                    shadowOffsetX: 0,
+                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                }
+                            }
+                        }
+                    ]
+                };
+                qualityChart.setOption(qualityOption);
+
+                // Handle window resize
+                window.addEventListener('resize', () => {
+                    performanceChart.resize();
+                    qualityChart.resize();
+                });
+            }
+
+            initializeAnimations() {
+                // Animate elements on scroll
+                const observerOptions = {
+                    threshold: 0.1,
+                    rootMargin: '0px 0px -50px 0px'
+                };
+
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.style.opacity = '1';
+                            entry.target.style.transform = 'translateY(0)';
+                        }
+                    });
+                }, observerOptions);
+
+                document.querySelectorAll('.fade-in').forEach(el => {
+                    observer.observe(el);
+                });
+            }
+
+            handleDragOver(e) {
+                e.preventDefault();
+                e.currentTarget.classList.add('dragover');
+            }
+
+            handleDragLeave(e) {
+                e.currentTarget.classList.remove('dragover');
+            }
+
+            handleDrop(e) {
+                e.preventDefault();
+                e.currentTarget.classList.remove('dragover');
+                const files = Array.from(e.dataTransfer.files);
+                this.processBatchFiles(files);
+            }
+
+            handleFileSelect(e) {
+                const files = Array.from(e.target.files);
+                this.processBatchFiles(files);
+            }
+
+            processBatchFiles(files) {
+                // Filter audio files
+                const audioFiles = files.filter(file => file.type.startsWith('audio/'));
+                
+                if (audioFiles.length === 0) {
+                    this.showNotification('Please select valid audio files', 'warning');
+                    return;
+                }
+
+                if (audioFiles.length > 10) {
+                    this.showNotification('Maximum 10 files allowed', 'warning');
+                    return;
+                }
+
+                // Simulate upload process
+                this.simulateBatchUpload(audioFiles);
+            }
+
+            simulateBatchUpload(files) {
+                const progressContainer = document.getElementById('batchUploadProgress');
+                const progressBar = document.getElementById('batchProgressBar');
+                const progressPercent = document.getElementById('batchProgressPercent');
+                
+                progressContainer.classList.remove('hidden');
+                
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += Math.random() * 10;
+                    if (progress >= 100) {
+                        progress = 100;
+                        clearInterval(interval);
+                        setTimeout(() => {
+                            progressContainer.classList.add('hidden');
+                            this.showNotification(`${files.length} files uploaded successfully!`, 'success');
+                        }, 500);
+                    }
+                    
+                    progressBar.style.width = `${progress}%`;
+                    progressPercent.textContent = `${Math.round(progress)}%`;
+                }, 200);
+            }
+
+            showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `fixed top-24 right-6 z-50 p-4 rounded-lg shadow-lg max-w-sm transform translate-x-full transition-transform duration-300`;
+                
+                const colors = {
+                    success: 'bg-green-600 text-white',
+                    warning: 'bg-yellow-600 text-white',
+                    error: 'bg-red-600 text-white',
+                    info: 'bg-teal-600 text-white'
+                };
+                
+                notification.className += ` ${colors[type]}`;
+                notification.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="flex-shrink-0">
+                            ${this.getNotificationIcon(type)}
+                        </div>
+                        <p class="text-sm font-medium">${message}</p>
+                        <button onclick="this.parentElement.parentElement.remove()" class="ml-auto text-white hover:text-gray-200">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.transform = 'translateX(0)';
+                }, 100);
+                
+                setTimeout(() => {
+                    notification.style.transform = 'translateX(full)';
+                    setTimeout(() => notification.remove(), 300);
+                }, 5000);
+            }
+
+            getNotificationIcon(type) {
+                const icons = {
+                    success: '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+                    warning: '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+                    error: '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>',
+                    info: '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
+                };
+                return icons[type] || icons.info;
+            }
+        }
+
+        // Global functions
+        function startBatchCloning() {
+            document.getElementById('cloning').scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+
+        function showDemo() {
+            workshop.showNotification('Demo video coming soon!', 'info');
+        }
+
+        function startTraining() {
+            workshop.showNotification('Training started! Check the progress dashboard.', 'success');
+            
+            // Simulate training progress
+            const stepIndicators = document.querySelectorAll('.step-indicator');
+            let currentStep = 1;
+            
+            const trainingInterval = setInterval(() => {
+                if (currentStep < stepIndicators.length) {
+                    stepIndicators[currentStep - 1].classList.remove('active');
+                    stepIndicators[currentStep - 1].classList.add('completed');
+                    stepIndicators[currentStep].classList.add('active');
+                    currentStep++;
+                } else {
+                    stepIndicators[currentStep - 1].classList.remove('active');
+                    stepIndicators[currentStep - 1].classList.add('completed');
+                    clearInterval(trainingInterval);
+                    workshop.showNotification('Training completed successfully!', 'success');
+                }
+            }, 2000);
+        }
+
+        function clearAll() {
+            workshop.showNotification('All files cleared', 'info');
+        }
+
+        function testVoice(voiceName) {
+            workshop.showNotification(`Testing ${voiceName} voice...`, 'info');
+        }
+
+        function exportVoice(voiceName) {
+            workshop.showNotification(`${voiceName} voice exported successfully!`, 'success');
+        }
+
+        function exportAllVoices() {
+            workshop.showNotification('All voices exported to your downloads folder!', 'success');
+        }
+
+        // Initialize workshop
+        let workshop;
+        document.addEventListener('DOMContentLoaded', () => {
+            workshop = new VoiceCloningWorkshop();
+        });
+    </script>
+</body>
+</html>

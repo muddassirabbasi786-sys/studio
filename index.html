@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F5 TTS - Advanced Voice Synthesis & Cloning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --deep-slate: #1e293b;
+            --warm-white: #fafafa;
+            --accent-teal: #0d9488;
+            --soft-gray: #64748b;
+            --success-green: #059669;
+            --warning-amber: #d97706;
+            --error-red: #dc2626;
+            --neutral-blue: #475569;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--deep-slate) 0%, #0f172a 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        .hero-bg {
+            background: url('resources/hero-bg.png') center/cover;
+            position: relative;
+        }
+        
+        .hero-bg::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(30, 41, 59, 0.7);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, var(--accent-teal), #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-teal), #06b6d4);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(13, 148, 136, 0.4);
+        }
+        
+        .waveform-container {
+            height: 200px;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .voice-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .voice-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .upload-zone {
+            border: 2px dashed var(--accent-teal);
+            transition: all 0.3s ease;
+        }
+        
+        .upload-zone.dragover {
+            border-color: #06b6d4;
+            background: rgba(13, 148, 136, 0.1);
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, var(--accent-teal), #06b6d4);
+            height: 4px;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+        
+        .audio-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .play-button {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--accent-teal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .play-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 20px rgba(13, 148, 136, 0.4);
+        }
+        
+        .slider-container {
+            position: relative;
+            margin: 20px 0;
+        }
+        
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent-teal);
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .feature-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--accent-teal), #06b6d4);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+        
+        .nav-link {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:hover {
+            color: var(--accent-teal);
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--accent-teal);
+            transition: width 0.3s ease;
+        }
+        
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        
+        .floating-particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(13, 148, 136, 0.6);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0; }
+            50% { transform: translateY(-100px) rotate(180deg); opacity: 1; }
+        }
+        
+        .typing-animation {
+            border-right: 2px solid var(--accent-teal);
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { border-color: var(--accent-teal); }
+            51%, 100% { border-color: transparent; }
+        }
+        
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 0.8s ease forwards;
+        }
+        
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .stagger-1 { animation-delay: 0.1s; }
+        .stagger-2 { animation-delay: 0.2s; }
+        .stagger-3 { animation-delay: 0.3s; }
+        .stagger-4 { animation-delay: 0.4s; }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-teal-500 to-cyan-400 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                    </div>
+                    <h1 class="text-xl font-bold text-white">F5 TTS</h1>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#synthesize" class="nav-link text-white hover:text-teal-400">Synthesize</a>
+                    <a href="cloning.html" class="nav-link text-white hover:text-teal-400">Voice Cloning</a>
+                    <a href="setup.html" class="nav-link text-white hover:text-teal-400">Setup Guide</a>
+                    <button class="btn-primary px-6 py-2 rounded-lg text-white font-medium">Get Started</button>
+                </div>
+                <button class="md:hidden text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-bg min-h-screen flex items-center justify-center relative pt-20">
+        <div class="floating-particles">
+            <div class="particle" style="left: 10%; animation-delay: 0s;"></div>
+            <div class="particle" style="left: 20%; animation-delay: 1s;"></div>
+            <div class="particle" style="left: 30%; animation-delay: 2s;"></div>
+            <div class="particle" style="left: 40%; animation-delay: 3s;"></div>
+            <div class="particle" style="left: 50%; animation-delay: 4s;"></div>
+            <div class="particle" style="left: 60%; animation-delay: 5s;"></div>
+            <div class="particle" style="left: 70%; animation-delay: 1.5s;"></div>
+            <div class="particle" style="left: 80%; animation-delay: 2.5s;"></div>
+            <div class="particle" style="left: 90%; animation-delay: 3.5s;"></div>
+        </div>
+        <div class="max-w-6xl mx-auto px-6 text-center relative z-10">
+            <h1 class="text-5xl md:text-7xl font-bold text-white mb-6 fade-in">
+                Advanced <span class="gradient-text">Voice Synthesis</span>
+            </h1>
+            <p class="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto fade-in stagger-1">
+                Experience cutting-edge F5 TTS technology with zero-shot voice cloning, 
+                real-time processing, and professional-grade audio quality.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center fade-in stagger-2">
+                <button onclick="scrollToSynthesize()" class="btn-primary px-8 py-4 rounded-xl text-lg font-semibold text-white">
+                    Start Synthesizing
+                </button>
+                <button onclick="playDemo()" class="glass-card px-8 py-4 rounded-xl text-lg font-semibold text-white hover:bg-white/20 transition-all">
+                    Listen to Demo
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Synthesis Interface -->
+    <section id="synthesize" class="py-20 relative">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-4xl md:text-5xl font-bold text-white mb-6">
+                    Voice Synthesis <span class="gradient-text">Interface</span>
+                </h2>
+                <p class="text-xl text-gray-300 max-w-2xl mx-auto">
+                    Transform text into natural, expressive speech using advanced AI voice cloning technology.
+                </p>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-12 items-start">
+                <!-- Control Panel -->
+                <div class="glass-card rounded-2xl p-8 fade-in stagger-1">
+                    <h3 class="text-2xl font-bold text-white mb-6">Synthesis Controls</h3>
+                    
+                    <!-- Text Input -->
+                    <div class="mb-8">
+                        <label class="block text-sm font-medium text-gray-300 mb-3">Input Text</label>
+                        <textarea 
+                            id="textInput" 
+                            placeholder="Enter the text you want to synthesize..."
+                            class="w-full h-32 p-4 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:border-teal-500 focus:outline-none resize-none"
+                        >Welcome to F5 TTS, where advanced AI technology meets natural voice synthesis. Experience the future of speech generation with our cutting-edge voice cloning capabilities.</textarea>
+                        <div class="flex justify-between items-center mt-2">
+                            <span class="text-xs text-gray-400">Character count: <span id="charCount">156</span></span>
+                            <button onclick="clearText()" class="text-xs text-teal-400 hover:text-teal-300">Clear</button>
+                        </div>
+                    </div>
+
+                    <!-- Voice Selection -->
+                    <div class="mb-8">
+                        <label class="block text-sm font-medium text-gray-300 mb-3">Voice Sample</label>
+                        <div class="upload-zone rounded-lg p-6 text-center border-2 border-dashed border-teal-500/30 hover:border-teal-500/60 transition-all cursor-pointer" id="uploadZone">
+                            <svg class="w-12 h-12 text-teal-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                            </svg>
+                            <p class="text-white mb-2">Drop your voice sample here</p>
+                            <p class="text-sm text-gray-400">or click to browse (10-15 seconds recommended)</p>
+                            <input type="file" id="voiceUpload" accept="audio/*" class="hidden">
+                        </div>
+                        <div id="uploadProgress" class="mt-4 hidden">
+                            <div class="flex justify-between text-sm text-gray-300 mb-2">
+                                <span>Uploading...</span>
+                                <span id="progressPercent">0%</span>
+                            </div>
+                            <div class="w-full bg-white/10 rounded-full h-2">
+                                <div id="progressBar" class="progress-bar w-0 h-2 rounded-full"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Voice Library -->
+                    <div class="mb-8">
+                        <label class="block text-sm font-medium text-gray-300 mb-3">Or choose from library</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="voice-card glass-card rounded-lg p-4 text-center" data-voice="alex">
+                                <div class="w-12 h-12 bg-teal-500 rounded-full mx-auto mb-2 flex items-center justify-center">
+                                    <span class="text-white font-bold">A</span>
+                                </div>
+                                <p class="text-white text-sm font-medium">Alex</p>
+                                <p class="text-xs text-gray-400">Professional</p>
+                            </div>
+                            <div class="voice-card glass-card rounded-lg p-4 text-center" data-voice="sarah">
+                                <div class="w-12 h-12 bg-cyan-500 rounded-full mx-auto mb-2 flex items-center justify-center">
+                                    <span class="text-white font-bold">S</span>
+                                </div>
+                                <p class="text-white text-sm font-medium">Sarah</p>
+                                <p class="text-xs text-gray-400">Conversational</p>
+                            </div>
+                            <div class="voice-card glass-card rounded-lg p-4 text-center" data-voice="mike">
+                                <div class="w-12 h-12 bg-blue-500 rounded-full mx-auto mb-2 flex items-center justify-center">
+                                    <span class="text-white font-bold">M</span>
+                                </div>
+                                <p class="text-white text-sm font-medium">Mike</p>
+                                <p class="text-xs text-gray-400">Narrator</p>
+                            </div>
+                            <div class="voice-card glass-card rounded-lg p-4 text-center" data-voice="emma">
+                                <div class="w-12 h-12 bg-purple-500 rounded-full mx-auto mb-2 flex items-center justify-center">
+                                    <span class="text-white font-bold">E</span>
+                                </div>
+                                <p class="text-white text-sm font-medium">Emma</p>
+                                <p class="text-xs text-gray-400">Friendly</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Speed Control -->
+                    <div class="mb-8">
+                        <label class="block text-sm font-medium text-gray-300 mb-3">Speed: <span id="speedValue">1.0x</span></label>
+                        <div class="slider-container">
+                            <input type="range" id="speedSlider" class="slider" min="0.5" max="2.0" step="0.1" value="1.0">
+                            <div class="flex justify-between text-xs text-gray-400 mt-1">
+                                <span>0.5x</span>
+                                <span>2.0x</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Emotion Selection -->
+                    <div class="mb-8">
+                        <label class="block text-sm font-medium text-gray-300 mb-3">Emotion Style</label>
+                        <select id="emotionSelect" class="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-teal-500 focus:outline-none">
+                            <option value="neutral">Neutral</option>
+                            <option value="happy">Happy</option>
+                            <option value="sad">Sad</option>
+                            <option value="excited">Excited</option>
+                            <option value="calm">Calm</option>
+                            <option value="professional">Professional</option>
+                        </select>
+                    </div>
+
+                    <!-- Generate Button -->
+                    <button id="generateBtn" onclick="generateSpeech()" class="w-full btn-primary py-4 rounded-xl text-lg font-semibold text-white">
+                        Generate Speech
+                    </button>
+                </div>
+
+                <!-- Preview Panel -->
+                <div class="glass-card rounded-2xl p-8 fade-in stagger-2">
+                    <h3 class="text-2xl font-bold text-white mb-6">Audio Preview</h3>
+                    
+                    <!-- Waveform Visualization -->
+                    <div class="waveform-container bg-black/30 rounded-lg mb-6" id="waveformContainer">
+                        <div class="flex items-center justify-center h-full text-gray-400">
+                            <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Audio Controls -->
+                    <div class="audio-controls mb-6">
+                        <div class="play-button" id="playButton">
+                            <svg class="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-white font-medium">Generated Audio</div>
+                            <div class="text-sm text-gray-400">Duration: <span id="audioDuration">0:00</span></div>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <button onclick="downloadAudio()" class="p-2 text-gray-400 hover:text-white transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                            </button>
+                            <button onclick="shareAudio()" class="p-2 text-gray-400 hover:text-white transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Generation Status -->
+                    <div id="generationStatus" class="hidden">
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="w-3 h-3 bg-teal-500 rounded-full animate-pulse"></div>
+                            <span class="text-white">Generating speech...</span>
+                        </div>
+                        <div class="w-full bg-white/10 rounded-full h-2 mb-4">
+                            <div id="generationProgress" class="progress-bar h-2 rounded-full transition-all duration-300"></div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Generations -->
+                    <div>
+                        <h4 class="text-lg font-semibold text-white mb-4">Recent Generations</h4>
+                        <div class="space-y-3" id="recentGenerations">
+                            <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center">
+                                        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M8 5v14l11-7z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-white text-sm font-medium">Welcome message</p>
+                                        <p class="text-xs text-gray-400">Alex • 1.0x • Neutral</p>
+                                    </div>
+                                </div>
+                                <button class="text-gray-400 hover:text-white">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-20 relative">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-4xl md:text-5xl font-bold text-white mb-6">
+                    Advanced <span class="gradient-text">Features</span>
+                </h2>
+                <p class="text-xl text-gray-300 max-w-2xl mx-auto">
+                    Discover the powerful capabilities that make F5 TTS the leading voice synthesis platform.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="glass-card rounded-2xl p-8 fade-in stagger-1">
+                    <div class="feature-icon">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-4">Zero-Shot Voice Cloning</h3>
+                    <p class="text-gray-300">Clone any voice with just 10-15 seconds of audio sample. No extensive training required.</p>
+                </div>
+
+                <div class="glass-card rounded-2xl p-8 fade-in stagger-2">
+                    <div class="feature-icon">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-4">Real-Time Processing</h3>
+                    <p class="text-gray-300">Generate speech faster than real-time with our optimized 0.15 RTF processing speed.</p>
+                </div>
+
+                <div class="glass-card rounded-2xl p-8 fade-in stagger-3">
+                    <div class="feature-icon">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-4">Multi-Language Support</h3>
+                    <p class="text-gray-300">Support for English, Chinese, and expanding to more languages for global applications.</p>
+                </div>
+
+                <div class="glass-card rounded-2xl p-8 fade-in stagger-4">
+                    <div class="feature-icon">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293H15M9 10V9a3 3 0 013-3v0a3 3 0 013 3v1M9 10v5a2 2 0 002 2h2a2 2 0 002-2v-5"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-4">Emotion Expression</h3>
+                    <p class="text-gray-300">Control emotional tone and speaking style to match your content's requirements.</p>
+                </div>
+
+                <div class="glass-card rounded-2xl p-8 fade-in stagger-1">
+                    <div class="feature-icon">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-4">High-Quality Output</h3>
+                    <p class="text-gray-300">Professional-grade audio quality with natural intonation and clear articulation.</p>
+                </div>
+
+                <div class="glass-card rounded-2xl p-8 fade-in stagger-2">
+                    <div class="feature-icon">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-4">Easy Integration</h3>
+                    <p class="text-gray-300">Simple API and Google Colab support for seamless integration into your workflow.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Voice Gallery -->
+    <section class="py-20 relative">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-4xl md:text-5xl font-bold text-white mb-6">
+                    Voice <span class="gradient-text">Gallery</span>
+                </h2>
+                <p class="text-xl text-gray-300 max-w-2xl mx-auto">
+                    Explore our collection of pre-trained voices, each with unique characteristics and styles.
+                </p>
+            </div>
+
+            <div class="splide" id="voiceGallery">
+                <div class="splide__track">
+                    <ul class="splide__list">
+                        <li class="splide__slide">
+                            <div class="glass-card rounded-2xl p-8 text-center">
+                                <div class="w-24 h-24 bg-gradient-to-br from-teal-500 to-cyan-400 rounded-full mx-auto mb-6 flex items-center justify-center">
+                                    <span class="text-3xl text-white font-bold">A</span>
+                                </div>
+                                <h3 class="text-2xl font-bold text-white mb-2">Alex</h3>
+                                <p class="text-gray-300 mb-4">Professional, authoritative voice perfect for business presentations and announcements.</p>
+                                <button onclick="previewVoice('alex')" class="btn-primary px-6 py-3 rounded-lg text-white font-medium">
+                                    Preview Voice
+                                </button>
+                            </div>
+                        </li>
+                        <li class="splide__slide">
+                            <div class="glass-card rounded-2xl p-8 text-center">
+                                <div class="w-24 h-24 bg-gradient-to-br from-cyan-500 to-blue-400 rounded-full mx-auto mb-6 flex items-center justify-center">
+                                    <span class="text-3xl text-white font-bold">S</span>
+                                </div>
+                                <h3 class="text-2xl font-bold text-white mb-2">Sarah</h3>
+                                <p class="text-gray-300 mb-4">Warm, conversational tone ideal for podcasts, audiobooks, and casual content.</p>
+                                <button onclick="previewVoice('sarah')" class="btn-primary px-6 py-3 rounded-lg text-white font-medium">
+                                    Preview Voice
+                                </button>
+                            </div>
+                        </li>
+                        <li class="splide__slide">
+                            <div class="glass-card rounded-2xl p-8 text-center">
+                                <div class="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-400 rounded-full mx-auto mb-6 flex items-center justify-center">
+                                    <span class="text-3xl text-white font-bold">M</span>
+                                </div>
+                                <h3 class="text-2xl font-bold text-white mb-2">Mike</h3>
+                                <p class="text-gray-300 mb-4">Deep, narrative voice excellent for storytelling, documentaries, and dramatic readings.</p>
+                                <button onclick="previewVoice('mike')" class="btn-primary px-6 py-3 rounded-lg text-white font-medium">
+                                    Preview Voice
+                                </button>
+                            </div>
+                        </li>
+                        <li class="splide__slide">
+                            <div class="glass-card rounded-2xl p-8 text-center">
+                                <div class="w-24 h-24 bg-gradient-to-br from-purple-500 to-pink-400 rounded-full mx-auto mb-6 flex items-center justify-center">
+                                    <span class="text-3xl text-white font-bold">E</span>
+                                </div>
+                                <h3 class="text-2xl font-bold text-white mb-2">Emma</h3>
+                                <p class="text-gray-300 mb-4">Friendly, energetic voice perfect for educational content, tutorials, and social media.</p>
+                                <button onclick="previewVoice('emma')" class="btn-primary px-6 py-3 rounded-lg text-white font-medium">
+                                    Preview Voice
+                                </button>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 border-t border-white/10">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex flex-col md:flex-row items-center justify-between">
+                <div class="flex items-center space-x-3 mb-4 md:mb-0">
+                    <div class="w-8 h-8 bg-gradient-to-br from-teal-500 to-cyan-400 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                    </div>
+                    <span class="text-white font-semibold">F5 TTS</span>
+                </div>
+                <p class="text-gray-400 text-sm">
+                    © 2024 F5 TTS. Advanced voice synthesis technology for the future.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="main.js"></script>
+</body>
+</html>
