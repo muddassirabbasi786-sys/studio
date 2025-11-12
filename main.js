@@ -1,4 +1,56 @@
-// F5 TTS Web Application - Main JavaScript
+// Add this to your main.js
+
+class F5TTSBackend {
+    constructor() {
+        this.backendUrl = null; // Will be set when Colab is running
+        this.isConnected = false;
+    }
+
+    async connectToBackend(colabUrl) {
+        try {
+            this.backendUrl = colabUrl.replace('/notebooks/', '/proxy/5000/');
+            
+            // Test connection
+            const response = await fetch(`${this.backendUrl}/api/health`);
+            if (response.ok) {
+                this.isConnected = true;
+                return true;
+            }
+        } catch (error) {
+            console.error('Failed to connect to backend:', error);
+            this.isConnected = false;
+            return false;
+        }
+    }
+
+    async generateSpeech(text, voiceSettings) {
+        if (!this.isConnected) {
+            throw new Error('Backend not connected');
+        }
+
+        const response = await fetch(`${this.backendUrl}/api/tts`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                text: text,
+                ref_audio: voiceSettings.refAudio || 'sample.wav',
+                speed: voiceSettings.speed || 1.0,
+                emotion: voiceSettings.emotion || 'neutral'
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Speech generation failed');
+        }
+
+        return response.blob();
+    }
+}
+
+// Initialize backend connection
+const backend = new F5TTSBackend();// F5 TTS Web Application - Main JavaScript
 class F5TTSApp {
     constructor() {
         this.isGenerating = false;
